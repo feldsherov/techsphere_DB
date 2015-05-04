@@ -1,0 +1,39 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+
+#include "../page.h"
+
+void create_page_1(std::string &pg) {
+   bool is_list = 1;
+   int page_num = 0;
+   int sz = 2;
+   std::vector<std::string> keys(sz), values(sz);
+   std::vector<int> ptrs({1, 2, 3});
+   keys[0] = "key1";
+   keys[1] = "key2";
+   values[0] = "val1"
+   values[1] = "val2";
+
+   pg.clear();
+   pg.append((char*) &is_list, sizeof(bool));
+   pg.append((char*) &page_num, sizeof(int));
+   pg.append((char*) &sz, sizeof(int));
+   for (int i = 0; i < sz; ++i) {
+        pg[sz].append(keys[i].c_str(), keys[i].size());
+   }
+
+   for (int i = 0; i < sz + 1; ++i) {
+        pg[sz].append((char*) &ptrs[i], sizeof(int));
+   }
+
+   for (int i = 0; i < sz; ++i) {
+       pg[sz].append(values[i].c_str(), values[i].size());
+   }
+}
+
+int main() {
+    std::string pg1;
+    create_page_1(pg1);
+    return 0;
+}
