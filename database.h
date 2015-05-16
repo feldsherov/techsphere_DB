@@ -73,6 +73,7 @@ public:
     int search(const std::string &key, std::string &val);
     int insert(const std::string &key, const std::string &val);
     int _delete(const std::string &key);
+    int sync();
 };
 
 #endif /* defined(__fdb2__database__) */

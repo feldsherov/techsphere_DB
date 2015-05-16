@@ -21,9 +21,10 @@ extern "C" {
     
     int api_close(struct DB* db) {
         DataBase *cdb = opened[db->db_id];
+        cdb->sync();
         opened.erase(db->db_id);
         delete cdb;
-        return 1;
+        return 0;
     }
     
     int api_select(struct DB *db, struct DBT *key, struct DBT *data) {
@@ -90,6 +91,12 @@ extern "C" {
             .size = val_len
         };
         return db->insert(db, &keyt, &valt);
+    }
+    
+    int db_flush(const struct DB *db) {
+        DataBase *cdb = opened[db->db_id];
+        cdb->sync();
+        return  0;
     }
 
 }

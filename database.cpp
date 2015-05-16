@@ -54,9 +54,15 @@ void DataBase::read_bitset(Bitset &b) {
     fapi.read_bitset(conf, b);
 }
 
+int DataBase::sync() {
+    fapi.sync(conf);
+    return 0;
+}
+
 void DataBase::dump_tree(int dpth, int cp) {
+    fapi.sync(conf);
     path[dpth].get_page_num() = cp;
-    read_page(path[dpth]);
+    fapi.read_page_from_disk(conf, path[dpth]);
     Page &cpage = path[dpth];
     for (int j = 0; j < dpth; ++j) {
         std::cerr << '\t';
@@ -128,6 +134,8 @@ void DataBase::split_child(Page &root, Page &left, Page &n_right) {
     n_right.ptrs.clear();
     n_right.keys.clear();
     n_right.values.clear();
+    
+    //std::cerr << "Split: " << left.get_page_num() << " " << n_right.get_page_num() << std::endl;
     
     int cp = 0;
     while (cp < (int)root.ptrs.size() && root.ptrs[cp] != left.get_page_num()) ++cp;
@@ -244,8 +252,13 @@ bool DataBase::insert_deb(const std::string &key, const std::string &val) {
     //std::cerr << "========DUMP_END=======" << std::endl;
     std::string val1;
     search(key, val1);
-    //std::cerr << "Search: " << key << std::endl;
-    //std::cerr << "Correct: " << val << " Found: " << val1 << std::endl;
+    std::cerr << "Search: " << key << std::endl;
+    std::cerr << "Correct: " << val << " Found: " << val1 << std::endl;
+    if (val != val1) {
+        std::cerr << "========DUMP=======" << std::endl;
+        dump_tree(0, 0);
+        std::cerr << "========DUMP_END=======" << std::endl;
+    }
     return (val == val1);
 }
 
@@ -284,7 +297,7 @@ int DataBase::insert_rec(int dpth, int pg, const std::string &key, const std::st
     path[dpth].get_page_num() = pg;
     read_page(path[dpth]);
     Page &cpage = path[dpth];
-
+    
     int cp = find_place(cpage, key);
     
     if (cpage.is_list()) {
@@ -295,7 +308,6 @@ int DataBase::insert_rec(int dpth, int pg, const std::string &key, const std::st
             return 0;
         }
         //std::cerr << "Уникальный ключ" << std::endl;
-        //std::cerr << cp << std::endl;
         cpage.keys.insert(cpage.keys.begin() + cp, key);
         cpage.values.insert(cpage.values.begin() + cp, val);
     }
@@ -324,9 +336,9 @@ int DataBase::insert_rec(int dpth, int pg, const std::string &key, const std::st
 bool DataBase::delete_deb(const std::string &key) {
     std::string val;
     std::cerr << "Deleted: " << key << std::endl;
-    //std::cerr << "========DUMP=======" << std::endl;
-    //dump_tree(0, 0);
-    //std::cerr << "========DUMP_END=======" << std::endl;
+    std::cerr << "========DUMP=======" << std::endl;
+    dump_tree(0, 0);
+    std::cerr << "========DUMP_END=======" << std::endl;
     search(key, val);
     return (val == "");
 }
@@ -342,7 +354,7 @@ int DataBase::_delete(const std::string &key) {
 int DataBase::delete_safe(const std::string &key) {
     int ret_code = delete_rec(0, 0,key);
     
-    if (!path[0].is_list() && path[0].keys.size() == 0) {
+    if (!path[0].is_list() && path[0].keys.size() == 1) {
         //std::cerr << "Поднимаем корень корень" << std::endl;
         free_page(path[1].get_page_num());
         path[1].get_page_num() = 0;

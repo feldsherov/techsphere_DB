@@ -23,7 +23,7 @@ const int DEFAULT_CACHE_SIZE = 16777216; /*16 MB*/
 
 
 void create_page_1(std::string &pg, FileSystemApi &api) {
-    bool is_list = 1;
+    bool is_list = 0;
     int page_num = 2;
     int sz = 2;
     std::vector<std::string> keys(sz), values(sz);
@@ -41,15 +41,16 @@ void create_page_1(std::string &pg, FileSystemApi &api) {
         pg.append((char *) &cs, sizeof(int));
         pg.append(keys[i].c_str(), keys[i].size());
     }
-    for (int i = 0; i < sz + 1; ++i) {
+
+    for (int i = 0; i < sz; ++i) {
         pg.append((char*) &ptrs[i], sizeof(int));
     }
     
-    for (int i = 0; i < sz; ++i) {
+    /*for (int i = 0; i < sz; ++i) {
         int cs = values[i].size();
         pg.append((char *) &cs, sizeof(int));
         pg.append(values[i].c_str(), values[i].size());
-    }
+    }*/
 }
 
 int main() {
@@ -70,14 +71,10 @@ int main() {
     std::string spg1, spg2;
     create_page_1(spg1, api);
     std::cout << "SPG1 created" << std::endl;
-    
     Page pg1(spg1.c_str()), pg2;
     pg2.get_page_num() = 2;
     api.write_page(conf, pg1);
-    std::cerr << "tmp0" << std::endl;
     api.read_page(conf, pg2);
-    std::cerr << "tmp1" << std::endl;
-    std::cerr << "tmp2" << std::endl;
     std::cout << "is_list: " << pg2.is_list() << std::endl;
     std::cout << "page_num: " << pg2.get_page_num() << std::endl;
     std::cout << "sz: " << pg2.keys_size() << std::endl;
@@ -107,6 +104,17 @@ int main() {
     
     std::cout << "pg1.num_bytes(), pg2.num_bytes(): " << pg1.num_bytes() << ", " << pg2.num_bytes() << std::endl;
     std::cout << "spg1 == spg2: " << (spg1 == spg2) << std::endl;
+    
+    for (int i = 0; i < (int)spg1.size(); ++i) {
+        std::cerr << (int)spg1[i] << " ";
+    }
+    std::cerr << std::endl;
+    
+    for (int i = 0; i < (int)spg2.size(); ++i) {
+        std::cerr << (int)spg2[i] << " ";
+    }
+    std::cerr << std::endl;
+    
     
     std::cout << "===========bitset===========" << std::endl;
     Bitset b((int)(conf.db_size / conf.page_size + 7) / 8), b1(0);

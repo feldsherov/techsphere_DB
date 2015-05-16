@@ -8,7 +8,7 @@ const int DEFAULT_CACHE_SIZE = 16777216; /*16 MB*/
 
 int main(int argc, const char * argv[]) {
     // insert code here...
-    DBC conf = {.page_size = DEFAULT_PAGE_SIZE / 8, .db_size = DEFAULT_DB_SIZE, .cache_size = DEFAULT_CACHE_SIZE};
+    DBC conf = {.page_size = DEFAULT_PAGE_SIZE / 8, .db_size = DEFAULT_DB_SIZE, .cache_size = DEFAULT_CACHE_SIZE / 16 / 1024};
     DB *dbnew = dbcreate("mydb", &conf);
     /*db_insert(dbnew, (void *)"Key1", 5, (void *)"val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1", 64);
     db_insert(dbnew, (void *)"key2", 5, (void *)"val2val2val2val2val2val2val2val2val2val2val2val2val2val2val2val2", 64);
