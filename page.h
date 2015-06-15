@@ -23,6 +23,7 @@ class DataBase;
 
 class Page {
     bool is_list_;
+    size_t llsn;
     int page_num;
     std::string outp_buff;
     std::vector<std::string> keys, values;
@@ -40,6 +41,7 @@ public:
     int& get_ptr(int i);
     bool& is_list();
     int& get_page_num();
+    size_t& get_llsn();
     
     int num_bytes();
     int keys_size();

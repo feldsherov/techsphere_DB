@@ -19,6 +19,18 @@ FileSystemApi::FileSystemApi(const std::string &path) {
     ccache_size = 0;
 }
 
+void FileSystemApi::open(const std::string &path) {
+    assert(!file.is_open());
+    if (!boost::filesystem::exists(path)) {
+        std::ofstream f(path);
+    }
+    file.open(path);
+    file.setf(std::ios::binary);
+    file.setf(std::ios::unitbuf);
+    
+    ccache_size = 0;
+}
+
 void FileSystemApi::read_meta(DBC &conf) {
     assert(file.is_open());
     file.seekg(0, std::ios_base::beg);
@@ -65,7 +77,6 @@ void FileSystemApi::read_bitset(DBC &conf, Bitset &b) {
 }
 
 void FileSystemApi::write_page(DBC &conf, Page &pg) {
-    //std::cerr << "write_page: "  << pg.get_page_num() << std::endl;
     push_to_cache(conf, pg);
 }
 

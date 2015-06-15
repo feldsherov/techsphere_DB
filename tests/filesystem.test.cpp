@@ -27,12 +27,15 @@ void create_page_1(std::string &pg, FileSystemApi &api) {
     int page_num = 2;
     int sz = 2;
     std::vector<std::string> keys(sz), values(sz);
+    size_t lsn = 5;
+    
     std::vector<int> ptrs({1, 2, 3});
     keys[0] = "key1";
     keys[1] = "key2";
     values[0] = "val1";
     values[1] = "val2";
     pg.clear();
+    pg.append((char*) &lsn, sizeof(size_t));
     pg.append((char*) &is_list, sizeof(bool));
     pg.append((char*) &page_num, sizeof(int));
     pg.append((char*) &sz, sizeof(int));
@@ -75,6 +78,7 @@ int main() {
     pg2.get_page_num() = 2;
     api.write_page(conf, pg1);
     api.read_page(conf, pg2);
+    std::cout << "lsn: " << pg2.get_llsn() << std::endl;
     std::cout << "is_list: " << pg2.is_list() << std::endl;
     std::cout << "page_num: " << pg2.get_page_num() << std::endl;
     std::cout << "sz: " << pg2.keys_size() << std::endl;

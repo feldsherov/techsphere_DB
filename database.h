@@ -10,12 +10,14 @@
 #define __fdb2__database__
 
 #include <set>
+#include <string>
 #include <boost/filesystem.hpp>
 
 #include "types.h"
 #include "bitset.h"
 #include "page.h"
 #include "filesystem.h"
+#include "log.h"
 
 class DataBase {
     static const int MAX_PATH_LEN = 32;
@@ -28,6 +30,7 @@ class DataBase {
     Bitset b;
     Page path[MAX_PATH_LEN];
     FileSystemApi fapi;
+    Log log;
     
     int bitset_size(DBC _conf);
     
@@ -37,6 +40,8 @@ class DataBase {
     void read_page(Page &pg);
     void write_bitset(Bitset &b);
     void read_bitset(Bitset &b);
+    
+    void recover_stable_storage();
     
     void dump_tree(int dpth, int cp);
     void check_tree(int dpth, int cp);

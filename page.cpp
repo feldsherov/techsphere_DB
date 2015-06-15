@@ -24,6 +24,11 @@ void Page::from_bytes(const char *src) {
     keys.clear();
     values.clear();
     
+    size_t *sssrc = (size_t *) src;
+    llsn = *sssrc;
+    ++sssrc;
+    src = (char *) sssrc;
+    
     bool *bsrc = ((bool *) src);
     is_list_ = *bsrc;
     ++bsrc;
@@ -74,6 +79,7 @@ void Page::from_bytes(const char *src) {
 
 const char* Page::as_bytes(int len) {
     outp_buff.clear();
+    outp_buff.append((char *) &llsn, sizeof(size_t));
     outp_buff.append((char *) &is_list_, sizeof(bool));
     outp_buff.append((char *) &page_num, sizeof(int));
     int sz = (int)keys.size();
@@ -116,9 +122,12 @@ int& Page::get_page_num() {
     return page_num;
 }
 
+size_t& Page::get_llsn() {
+    return llsn;
+}
 
 int Page::num_bytes() {
-    int ans = sizeof(is_list_) + sizeof(int) + sizeof(int); //is_list_ + page_num + sz
+    int ans = sizeof(is_list_) + sizeof(int) + sizeof(int) + sizeof(llsn); //is_list_ + page_num + sz + llsn
     for (auto s: keys) {
         ans += s.size() + sizeof(int); // key size + value
     }

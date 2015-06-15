@@ -41,7 +41,9 @@ private:
     void balance_cache(DBC &conf);
     
 public:
+    FileSystemApi(){};
     FileSystemApi(const std::string &path);
+    void open(const std::string &path);
     void read_meta(DBC &conf);
     void write_meta(DBC &conf);
     void read_bitset(DBC &conf, Bitset &b);

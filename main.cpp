@@ -1,5 +1,6 @@
 #include <iostream>
 #include "mydb.h"
+#include "log.h"
 
 const int DEFAULT_DB_SIZE = 536870912u; /*512 MB*/
 const int DEFAULT_PAGE_SIZE = 4096u; /*4 KB*/
@@ -10,13 +11,69 @@ int main(int argc, const char * argv[]) {
     // insert code here...
     DBC conf = {.page_size = DEFAULT_PAGE_SIZE / 8, .db_size = DEFAULT_DB_SIZE, .cache_size = DEFAULT_CACHE_SIZE / 16 / 1024};
     DB *dbnew = dbcreate("mydb", &conf);
-    /*db_insert(dbnew, (void *)"Key1", 5, (void *)"val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1", 64);
+    db_insert(dbnew, (void *)"Key1", 5, (void *)"val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1", 64);
     db_insert(dbnew, (void *)"key2", 5, (void *)"val2val2val2val2val2val2val2val2val2val2val2val2val2val2val2val2", 64);
     db_insert(dbnew, (void *)"Key3", 5, (void *)"val3val3val3val3val3val3val3val3val3val3val3val3val3val3val3val3", 64);
     db_insert(dbnew, (void *)"key4", 5, (void *)"val4val4val4val4val4val4val4val4val4val4val4val4val4val4val4val4", 64);
     db_insert(dbnew, (void *)"Key5", 5, (void *)"val5val5val5val5val5val5val5val5val5val5val5val5val5val5val5val5", 64);
     
-    db_insert(dbnew, (void *)"Flers-de-l'Orne", 16, (void *)"3DfaB9004aBAA1dd93f3DfaB9004aBAA1dd93f", 42);
+    size_t t;
+    char **buff;
+    std::cerr << db_select(dbnew, (void *)"Key5", 5,(void **)&buff, &t);
+    
+    std::cerr << *buff << std::endl;
+    
+    Log lg("mydb", conf) ;
+    
+    std::cout << "Count of records: " << lg.count_records() << std::endl;
+    
+    Log::Record rc;
+    for (int i = 0; i < lg.count_records(); ++i) {
+        lg.set_rec_to(i);
+        lg.get_record(rc);
+        std::cout << "=======================start record " << i << "==============" << std::endl;
+        std::cout << "Rec: " << i << "; rec_type :" << (int) rc.opr << " rec_size :" << rc.size << std::endl;
+        
+        if (rc.opr == Log::Operation::write) {
+            Page &pg1 = rc.pg;
+            std::string spg2;
+            std::cout << "lsn: " << pg1.get_llsn() << std::endl;
+            std::cout << "is_list: " << pg1.is_list() << std::endl;
+            std::cout << "page_num: " << pg1.get_page_num() << std::endl;
+            std::cout << "sz: " << pg1.keys_size() << std::endl;
+            
+            std::cout << "-----------------------" << std::endl;
+            std::cout << "KEYS:" << std::endl;
+            for (int i = 0; i < (int)pg1.keys_size(); ++i) {
+                std::cout << pg1.get_key(i) << std::endl;
+            }
+            
+            
+            std::cout << "-----------------------" << std::endl;
+            std::cout << "PTRS:" << std::endl;
+            for (int i = 0; i < (int)pg1.ptrs_size(); ++i) {
+                std::cout << pg1.get_ptr(i) << " ";
+            }
+            std::cout << std::endl;
+            
+            std::cout << "-----------------------" << std::endl;
+            std::cout << "VALUES:" << std::endl;
+            for (int i = 0; i < (int)pg1.values_size(); ++i) {
+                std::cout << pg1.get_value(i) << std::endl;
+            }
+            
+            std::cout << "-----------------------" << std::endl;
+            
+            spg2.append(pg1.as_bytes(pg1.num_bytes()), pg1.num_bytes());
+            
+            std::cout << "pg1.num_bytes(): " << pg1.num_bytes() << std::endl;
+        }
+        std::cout << "======================end record " << i << "===============" << std::endl;
+        
+    }
+
+    
+    /*db_insert(dbnew, (void *)"Flers-de-l'Orne", 16, (void *)"3DfaB9004aBAA1dd93f3DfaB9004aBAA1dd93f", 42);
     db_insert(dbnew, (void *)"Karangrumak", 12, (void *)"aE6a5fB03795af1569faE6a5fB03795af1569f", 42);
     db_insert(dbnew, (void *)"Kuninkaanoja", 14, (void *)"6acdD397Ab13b4D361e6acdD397Ab13b4D361e", 42);
     db_insert(dbnew, (void *)"Mala Rakowiza", 14, (void *)"54d288469EE2b6A60D054d288469EE2b6A60D0", 42);
@@ -46,7 +103,7 @@ int main(int argc, const char * argv[]) {
     db_select(dbnew, (void *)"Yerryk-Kata", 12, (void **)&buff, &tp);
     std::cerr << buff << " " << tp << std:: endl;*/
     
-    db_insert(dbnew, (void *)"Key1aaaaaaaaaaaaaaaaaaaaaa", 25, (void *)"val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1", 64);
+    /*db_insert(dbnew, (void *)"Key1aaaaaaaaaaaaaaaaaaaaaa", 25, (void *)"val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1", 64);
     db_insert(dbnew, (void *)"Key2aaaaaaaaaaaaaaaaaaaaaa", 25, (void *)"val2val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1", 64);
     db_insert(dbnew, (void *)"Key3aaaaaaaaaaaaaaaaaaaaaa", 25, (void *)"val3val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1", 64);
     db_insert(dbnew, (void *)"Key4aaaaaaaaaaaaaaaaaaaaaa", 25, (void *)"val4val1val1val1val1val1val1val1val1val1val1val1val1val1val1val1", 64);
@@ -165,7 +222,7 @@ int main(int argc, const char * argv[]) {
     db_delete(dbnew, (void *)"Key36aaaaaaaaaaaaaaaaaaaaaa", 25);
     db_delete(dbnew, (void *)"Key37aaaaaaaaaaaaaaaaaaaaaa", 25);
     db_delete(dbnew, (void *)"Key38aaaaaaaaaaaaaaaaaaaaaa", 25);
-    db_delete(dbnew, (void *)"Key39aaaaaaaaaaaaaaaaaaaaaa", 25);
+    db_delete(dbnew, (void *)"Key39aaaaaaaaaaaaaaaaaaaaaa", 25);*/
 
     return 0;
 }

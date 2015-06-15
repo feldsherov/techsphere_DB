@@ -9,6 +9,7 @@ void create_page_1(std::string &pg) {
     bool is_list = 0;
     int page_num = 0;
     int sz = 2;
+    size_t lsn = 5;
     std::vector<std::string> keys(sz), values(sz);
     std::vector<int> ptrs({1, 2, 3});
     keys[0] = "key1";
@@ -17,6 +18,7 @@ void create_page_1(std::string &pg) {
     values[1] = "val2";
 
     pg.clear();
+    pg.append((char*) &lsn, sizeof(size_t));
     pg.append((char*) &is_list, sizeof(bool));
     pg.append((char*) &page_num, sizeof(int));
     pg.append((char*) &sz, sizeof(int));
@@ -42,6 +44,7 @@ int main() {
     create_page_1(spg1);
     std::cout << "SPG1 created" << std::endl;
     Page pg1(spg1.c_str());
+    std::cout << "lsn: " << pg1.get_llsn() << std::endl;
     std::cout << "is_list: " << pg1.is_list() << std::endl;
     std::cout << "page_num: " << pg1.get_page_num() << std::endl;
     std::cout << "sz: " << pg1.keys_size() << std::endl;
@@ -55,7 +58,7 @@ int main() {
     
     std::cout << "-----------------------" << std::endl;
     std::cout << "PTRS:" << std::endl;
-    for (int i = 0; i < (int)pg1.keys_size(); ++i) {
+    for (int i = 0; i < (int)pg1.ptrs_size(); ++i) {
         std::cout << pg1.get_ptr(i) << " ";
     }
     std::cout << std::endl;

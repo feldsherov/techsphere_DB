@@ -8,3 +8,6 @@ bitset:
 
 filesystem:
 	g++ filesystem.test.cpp ../filesystem.cpp ../bitset.cpp ../page.cpp -lboost_system-mt -lboost_filesystem-mt -std=c++11 -o filesystem.test
+
+log:
+	g++ log.test.cpp ../filesystem.cpp ../bitset.cpp ../page.cpp ../log.cpp -lboost_system-mt -lboost_filesystem-mt -std=c++11 -o log.test

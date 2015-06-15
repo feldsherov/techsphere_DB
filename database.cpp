@@ -8,8 +8,9 @@
 
 #include "database.h"
 
-DataBase::DataBase(const char *pth, DBC _conf) : fapi(pth), b(0) {
-    if (boost::filesystem::exists(pth)) {
+DataBase::DataBase(const char *pth, DBC _conf) :b(0), log(pth, _conf) {
+    if (!boost::filesystem::exists(pth)) {
+        fapi.open(pth);
         conf = _conf;
         b.resize(bitset_size(conf));
         b.set(0, 1);
@@ -21,8 +22,17 @@ DataBase::DataBase(const char *pth, DBC _conf) : fapi(pth), b(0) {
         write_page(pg);
     }
     else {
+        fapi.open(pth);
         read_meta(conf);
         read_bitset(b);
+        
+        int lst = (int)log.count_records() - 1;
+        Log::Record rec;
+        log.set_rec_to(lst);
+        log.get_record(rec);
+        if (rec.opr != Log::Operation::check_point) {
+            recover_stable_storage();
+        }
     }
 }
 
@@ -39,6 +49,7 @@ void DataBase::read_meta(DBC &_conf) {
 }
 
 void DataBase::write_page(Page &pg) {
+    log.append_page(pg);
     fapi.write_page(conf, pg);
 }
 
@@ -56,6 +67,8 @@ void DataBase::read_bitset(Bitset &b) {
 
 int DataBase::sync() {
     fapi.sync(conf);
+    write_bitset(b);
+    log.append_check_point();
     return 0;
 }
 
@@ -83,6 +96,55 @@ void DataBase::dump_tree(int dpth, int cp) {
     }
 }
 
+void DataBase::recover_stable_storage() {
+    ssize_t sz = (ssize_t)log.count_records() - 1;
+    
+    Log::Record rc;
+    ssize_t last_commit = sz;
+    while (sz > 0) {
+        log.set_rec_to(sz);
+        log.get_record(rc);
+        if (rc.opr == Log::Operation::check_point) {
+            break;
+        }
+        if (rc.opr == Log::Operation::commit && last_commit == -1) {
+            last_commit = sz;
+        }
+        
+        if (last_commit == -1 && (rc.opr == Log::Operation::free_page || rc.opr == Log::Operation::alloc_page)) {
+            if (rc.opr == Log::Operation::free_page) {
+                b.set(rc.pgn, 1);
+            }
+            
+            if (rc.opr == Log::Operation::alloc_page) {
+                b.set(rc.pgn, 0);
+            }
+        }
+        --sz;
+    }
+    
+    for (size_t i = sz; i < last_commit; ++i) {
+        log.set_rec_to(i);
+        log.get_record(rc);
+        if (rc.opr == Log::Operation::write) {
+            fapi.write_page(conf, rc.pg);
+        }
+        else if (rc.opr == Log::Operation::alloc_page) {
+            b.set(rc.pgn, 1);
+        }
+        else if (rc.opr == Log::Operation::free_page) {
+            b.set(rc.pgn, 0);
+        }
+    }
+    
+    if (last_commit != (ssize_t)log.count_records() - 1) {
+        log.set_eof_to_rec(last_commit);
+    }
+    
+    write_bitset(b);
+    return;
+}
+
 void DataBase::check_tree(int dpth, int cp) {
     path[dpth].get_page_num() = cp;
     read_page(path[dpth]);
@@ -107,8 +169,9 @@ int DataBase::alloc_page() {
     int to = bitset_size(conf);
     for (int i = 0; i < to; ++i) {
         if (!b.get(i)) {
+            log.append_alloc_page(i);
             b.set(i, 1);
-            write_bitset(b);
+            //write_bitset(b);
             return i;
         }
     }
@@ -117,8 +180,10 @@ int DataBase::alloc_page() {
 }
 
 int DataBase::free_page(int pg) {
+    assert(b.get(pg));
+    log.append_free_page(pg);
     b.set(pg, 0);
-    write_bitset(b);
+    //write_bitset(b);
     return 0;
 }
 
@@ -266,7 +331,8 @@ int DataBase::insert(const std::string &key, const std::string &val) {
     int ret_code;
     ret_code = insert_safe(key, val);
     //assert(insert_deb(key, val));
-
+    
+    log.append_commit();
     return ret_code;
 }
 
@@ -346,7 +412,7 @@ bool DataBase::delete_deb(const std::string &key) {
 int DataBase::_delete(const std::string &key) {
     int ret_code = delete_safe(key);
     
-
+    log.append_commit();
     //assert(delete_deb(key));
     return ret_code;
 }
